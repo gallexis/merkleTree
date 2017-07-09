@@ -13,7 +13,7 @@ type merkleNode struct {
 }
 
 
-func CreateMerkleTree(values []string) /* merkleNode */ {
+func CreateMerkleTree(values []string)  merkleNode {
 
 
 	length := len(values)
@@ -21,6 +21,8 @@ func CreateMerkleTree(values []string) /* merkleNode */ {
 	fmt.Println(heightTree)
 
 	t := createTree(int(heightTree), values)
+
+	fmt.Println(t)
 	fmt.Println(t.leftChild)
 	fmt.Println(t.leftChild.leftChild)
 	fmt.Println(t.leftChild.rightChild)
@@ -28,6 +30,7 @@ func CreateMerkleTree(values []string) /* merkleNode */ {
 	fmt.Println(t.rightChild.leftChild)
 	fmt.Println(t.rightChild.rightChild)
 
+	return t
 }
 
 func  createTree(level int, hashes []string) merkleNode{
@@ -42,22 +45,21 @@ func  createTree(level int, hashes []string) merkleNode{
 
 	} else if level > 0{
 		level -= 1
-		m := lenghtHashes % 2
+		node := createNode("")
+		h := lenghtHashes % 2
 
-		if m == 1{
-			m = (lenghtHashes / 2) + 1
+		if h == 1{
+			h = (lenghtHashes / 2) + 1
 		}else{
-			m = (lenghtHashes / 2)
+			h = (lenghtHashes / 2)
 		}
-		t := createNode("")
 
-
-		lc := createTree(level,hashes[:m])
-		rc := createTree(level,hashes[m:])
-		t.leftChild  = &lc
-		t.rightChild = &rc
-		//t.hash = hash256(t.leftChild.hash + t.rightChild.hash)
-		return t
+		lc := createTree(level,hashes[:h])
+		rc := createTree(level,hashes[h:])
+		node.leftChild  = &lc
+		node.rightChild = &rc
+		//node.hash = hash256(node.leftChild.hash + node.rightChild.hash)
+		return node
 
 	} else {
 		fmt.Println("erreur")
@@ -74,14 +76,6 @@ func  createNode(hsh string) merkleNode{
 	return merkleNode{isLeaf:false, hash: hsh, leftChild: nil, rightChild: nil}
 }
 
-func  createParent(leftChild *merkleNode, rightChild *merkleNode) merkleNode{
-	n := createNode("")
-	n.leftChild  = leftChild
-	n.rightChild = rightChild
-	// n.hash = hash256(n.leftChild.hash + n.rightChild.hash)
-	return n
-}
-
 func (node *merkleNode) addData(str string){
 
 }
@@ -90,8 +84,11 @@ func (node merkleNode) root() (string){
 	return node.hash
 }
 
-func (node *merkleNode) height(){
-
+func (node *merkleNode) height() (i int){
+	for i=1; !node.leftChild.isLeaf ;i++{
+		node=node.leftChild
+	}
+	return
 }
 
 func (node *merkleNode) level(index int){
@@ -99,5 +96,6 @@ func (node *merkleNode) level(index int){
 }
 
 func main(){
-	CreateMerkleTree([]string{"aa","bb","cc","dd","ee"})
+	t := CreateMerkleTree([]string{"aa","bb","cc","ccd"})
+	fmt.Println(t.height())
 }
