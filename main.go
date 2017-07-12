@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"errors"
 	"crypto/sha256"
+	"errors"
+	"fmt"
 )
 
 type merkleNode struct {
@@ -13,80 +13,124 @@ type merkleNode struct {
 	rightChild *merkleNode
 }
 
+func toSHA256(data string) string {
+	sum := sha256.Sum256([]byte(data))
+	return fmt.Sprintf("%x", sum)
+}
+
 func CreateMerkleTree(hashes []string) (merkleNode, error) {
-	nodes, err := getArrayOfNodes(hashes)
-	if err != nil {
-		return merkleNode{}, err
+	lengthHashed := len(hashes)
+	t := merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
+
+	if lengthHashed <= 0 {
+		return merkleNode{}, errors.New("Empty array of hashes")
 	}
 
-	for len(nodes) > 1 {
-		nodes = createFathers(nodes)
+	if 1 == lengthHashed {
+		t.hash = toSHA256(hashes[0])
+		t.isLeaf = true
+		return t, nil
 	}
 
-	t := nodes[0]
-	fmt.Println(t)
+	if lengthHashed > 1 {
+		for _, elt := range hashes {
+			t.AddNode(elt)
+		}
+	}
 
 	return t, nil
 }
 
-func getArrayOfNodes(hashes []string) ([]merkleNode, error) {
-	if 0 == len(hashes) {
-		return nil, errors.New("Empty hashes array")
-	}
-	nodesArray := []merkleNode{}
+func (node *merkleNode) AddNode(data string) {
+	if node.leftChild == nil {
+		node.leftChild = &merkleNode{isLeaf: true, hash: toSHA256(data), leftChild: nil, rightChild: nil}
+		node.hashMe()
 
-	for _, hash := range hashes {
-		node := merkleNode{isLeaf: true, hash: "", leftChild: nil, rightChild: nil}
-		node.hashMe(hash)
-		nodesArray = append(nodesArray, node)
+	} else if node.rightChild == nil {
+		if node.leftChild.isLeaf || node.leftChild.isCompleteTree() {
+			node.rightChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
+			height := node.GetHeight()
+
+			node.rightChild.insertLeft(height-1, data)
+			node.hashMe()
+
+		} else {
+			node.leftChild.AddNode(data)
+			node.hashMe()
+		}
+
+	} else if (node.leftChild != nil) && (node.rightChild != nil) {
+
+		if node.isCompleteTree() {
+			root := merkleNode{isLeaf: node.isLeaf, hash: node.hash, leftChild: node.leftChild, rightChild: node.rightChild}
+			node.leftChild = &root
+			node.rightChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
+			height := node.GetHeight()
+
+			node.rightChild.insertLeft(height-1, data)
+			node.hashMe()
+
+		} else {
+			node.rightChild.AddNode(data)
+			node.hashMe()
+		}
+
+	} else {
+		println("Error")
 	}
-	return nodesArray, nil
 }
 
-func createFathers(nodes []merkleNode) []merkleNode {
-	nodesArray := []merkleNode{}
-	lengthNodes := len(nodes)
+func (node *merkleNode) insertLeft(level int, data string) {
+	if level == 0 {
+		node.isLeaf = true
+		node.hash = toSHA256(data)
+		return
+	}
+
+	node.leftChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
+	node.leftChild.insertLeft(level-1, data)
+	node.hashMe()
+}
+
+func (node *merkleNode) isCompleteTree() bool {
 	i := 0
+	height := node.GetHeight()
 
-	for i = 0; lengthNodes-i > 1; i += 2 {
-		lc := nodes[i]
-		rc := nodes[i+1]
-		node := merkleNode{isLeaf: false, hash: "", leftChild: &lc, rightChild: &rc}
-		node.hashMe(lc.hash + rc.hash)
-		nodesArray = append(nodesArray, node)
+	for i = 0; i < height && node.rightChild != nil; i++ {
+		node = node.rightChild
 	}
 
-	if 1 == lengthNodes-i {
-		lc := nodes[lengthNodes-1]
-		node := merkleNode{isLeaf: false, hash: "", leftChild: &lc, rightChild: nil}
-		nodesArray = append(nodesArray, node)
+	return height == i
+}
+
+func (node *merkleNode) hashMe() {
+
+	if node.leftChild != nil && node.rightChild != nil {
+		node.hash = toSHA256(node.leftChild.hash + node.rightChild.hash)
+
+	} else if node.leftChild != nil && node.rightChild == nil {
+		node.hash = node.leftChild.hash
 	}
-	return nodesArray
 }
 
-func (node *merkleNode) hashMe(data string) {
-	sum := sha256.Sum256([]byte(data))
-	node.hash = fmt.Sprintf("%x", sum)
-}
-
-func (node merkleNode) GetRoot() (string) {
+func (node merkleNode) GetRoot() string {
 	return node.hash
 }
 
 func (node *merkleNode) GetHeight() (i int) {
-	for i = 0; !node.isLeaf; i++ {
+	for i = 0; !node.isLeaf && node.leftChild != nil; i++ {
 		node = node.leftChild
 	}
 	return
 }
 
-func (node *merkleNode) getNodesByLevel(level int) ([]string) {
+func (node *merkleNode) getNodesByLevel(level int) []string {
 	if level <= 0 {
 		return []string{node.hash}
 
 	} else {
 		if node.rightChild != nil {
-			return append(node.leftChild.getNodesByLevel(level-1), node.rightChild.getNodesByLevel(level-1) ...)
+			return append(node.leftChild.getNodesByLevel(level-1), node.rightChild.getNodesByLevel(level-1)...)
 		}
 		return node.leftChild.getNodesByLevel(level - 1)
 	}
@@ -101,15 +145,15 @@ func (node *merkleNode) GetLevel(level int) ([]string, error) {
 }
 
 func main() {
-	t, err := CreateMerkleTree([]string{"a","b"})
+	t, err := CreateMerkleTree([]string{"a", })
 	if err != nil {
 		return
 	}
-	fmt.Println(t.leftChild)
-	fmt.Println(t.rightChild)
+
+	fmt.Println(t)
 
 
 	fmt.Println(t.GetRoot())
-	fmt.Println(t.GetHeight())
-	fmt.Println(t.GetLevel(1))
+	//fmt.Println(t.GetHeight())
+	fmt.Println(t.GetLevel(t.GetHeight()))
 }
