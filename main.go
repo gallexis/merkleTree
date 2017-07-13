@@ -26,13 +26,7 @@ func CreateMerkleTree(hashes []string) (merkleNode, error) {
 		return merkleNode{}, errors.New("Empty array of hashes")
 	}
 
-	if 1 == lengthHashed {
-		t.hash = toSHA256(hashes[0])
-		t.isLeaf = true
-		return t, nil
-	}
-
-	if lengthHashed > 1 {
+	if lengthHashed > 0 {
 		for _, elt := range hashes {
 			t.AddNode(elt)
 		}
@@ -145,15 +139,5 @@ func (node *merkleNode) GetLevel(level int) ([]string, error) {
 }
 
 func main() {
-	t, err := CreateMerkleTree([]string{"a", })
-	if err != nil {
-		return
-	}
 
-	fmt.Println(t)
-
-
-	fmt.Println(t.GetRoot())
-	//fmt.Println(t.GetHeight())
-	fmt.Println(t.GetLevel(t.GetHeight()))
 }
