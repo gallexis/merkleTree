@@ -44,12 +44,12 @@ func TestTree_getLevel2(t *testing.T) {
 
 	nodes, err := tree.GetLevel(2)
 	if err != nil {
-		t.Errorf("Error while getting level 0.")
+		t.Errorf("Error while getting level 2.")
 		return
 	}
 
 	if len(nodes) != 3 {
-		t.Errorf("Node must be of length 1")
+		t.Errorf("Node must be of length 3")
 	}
 
 	if a != nodes[0] {
@@ -57,11 +57,11 @@ func TestTree_getLevel2(t *testing.T) {
 	}
 
 	if b != nodes[1] {
-		t.Errorf("Hash was incorrect, got: %d, want: %d.", tree.hash, nodes[0])
+		t.Errorf("Hash was incorrect, got: %d, want: %d.", tree.hash, nodes[1])
 	}
 
 	if c != nodes[2] {
-		t.Errorf("Hash was incorrect, got: %d, want: %d.", tree.hash, nodes[0])
+		t.Errorf("Hash was incorrect, got: %d, want: %d.", tree.hash, nodes[2])
 	}
 }
 

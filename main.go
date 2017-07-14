@@ -38,7 +38,6 @@ func CreateMerkleTree(hashes []string) (merkleNode, error) {
 func (node *merkleNode) AddNode(data string) {
 	if node.leftChild == nil {
 		node.leftChild = &merkleNode{isLeaf: true, hash: toSHA256(data), leftChild: nil, rightChild: nil}
-		node.hashMe()
 
 	} else if node.rightChild == nil {
 		if node.leftChild.isLeaf || node.leftChild.isCompleteTree() {
@@ -46,15 +45,12 @@ func (node *merkleNode) AddNode(data string) {
 			height := node.GetHeight()
 
 			node.rightChild.insertLeft(height-1, data)
-			node.hashMe()
 
 		} else {
 			node.leftChild.AddNode(data)
-			node.hashMe()
 		}
 
 	} else if (node.leftChild != nil) && (node.rightChild != nil) {
-
 		if node.isCompleteTree() {
 			root := merkleNode{isLeaf: node.isLeaf, hash: node.hash, leftChild: node.leftChild, rightChild: node.rightChild}
 			node.leftChild = &root
@@ -62,16 +58,12 @@ func (node *merkleNode) AddNode(data string) {
 			height := node.GetHeight()
 
 			node.rightChild.insertLeft(height-1, data)
-			node.hashMe()
 
 		} else {
 			node.rightChild.AddNode(data)
-			node.hashMe()
 		}
-
-	} else {
-		println("Error")
 	}
+	node.hashMe()
 }
 
 func (node *merkleNode) insertLeft(level int, data string) {
@@ -98,7 +90,6 @@ func (node *merkleNode) isCompleteTree() bool {
 }
 
 func (node *merkleNode) hashMe() {
-
 	if node.leftChild != nil && node.rightChild != nil {
 		node.hash = toSHA256(node.leftChild.hash + node.rightChild.hash)
 
@@ -132,6 +123,7 @@ func (node *merkleNode) getNodesByLevel(level int) []string {
 
 func (node *merkleNode) GetLevel(level int) ([]string, error) {
 	height := node.GetHeight()
+
 	if level > height {
 		return nil, errors.New("Level too deep")
 	}
