@@ -50,17 +50,17 @@ func (node *merkleNode) AddNode(data string) {
 
 			node.rightChild.insertLeft(height-1, data)
 
-			/*
-				Otherwise, just insert the node where we find a nil right child from this current part of the tree.
-			 */
+		/*
+			Otherwise, just insert the node where we find a nil right child from this current part of the tree.
+		 */
 		} else {
 			node.leftChild.AddNode(data)
 		}
 
-		/*
-			If it's a complete tree, we need to add a new layer at the top of the tree,
-			then insert the node at the bottom right of this tree.
-		 */
+	/*
+		If it's a complete tree, we need to add a new layer at the top of the tree,
+		then insert the node at the bottom right of this tree.
+	 */
 	} else if node.isCompleteTree() {
 		root := merkleNode{isLeaf: node.isLeaf, hash: node.hash, leftChild: node.leftChild, rightChild: node.rightChild}
 		node.leftChild = &root
@@ -69,9 +69,9 @@ func (node *merkleNode) AddNode(data string) {
 
 		node.rightChild.insertLeft(height-1, data)
 
-		/*
-			Otherwise, just insert the node where we find a nil right child from this current part of the tree.
-		 */
+	/*
+		Otherwise, just insert the node where we find a nil right child from this current part of the tree.
+	 */
 	} else {
 		node.rightChild.AddNode(data)
 	}
