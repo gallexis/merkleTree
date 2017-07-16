@@ -36,36 +36,53 @@ func CreateMerkleTree(hashes []string) (merkleNode, error) {
 }
 
 func (node *merkleNode) AddNode(data string) {
+
 	if node.leftChild == nil {
 		node.leftChild = &merkleNode{isLeaf: true, hash: toSHA256(data), leftChild: nil, rightChild: nil}
 
 	} else if node.rightChild == nil {
-		if node.leftChild.isLeaf || node.leftChild.isCompleteTree() {
+		/*
+			If the left part of the current tree is complete
+		 */
+		if node.leftChild.isCompleteTree() {
 			node.rightChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
 			height := node.GetHeight()
 
 			node.rightChild.insertLeft(height-1, data)
 
+			/*
+				Otherwise, just insert the node where we find a nil right child from this current part of the tree.
+			 */
 		} else {
 			node.leftChild.AddNode(data)
 		}
 
-	} else if (node.leftChild != nil) && (node.rightChild != nil) {
-		if node.isCompleteTree() {
-			root := merkleNode{isLeaf: node.isLeaf, hash: node.hash, leftChild: node.leftChild, rightChild: node.rightChild}
-			node.leftChild = &root
-			node.rightChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
-			height := node.GetHeight()
+		/*
+			If it's a complete tree, we need to add a new layer at the top of the tree,
+			then insert the node at the bottom right of this tree.
+		 */
+	} else if node.isCompleteTree() {
+		root := merkleNode{isLeaf: node.isLeaf, hash: node.hash, leftChild: node.leftChild, rightChild: node.rightChild}
+		node.leftChild = &root
+		node.rightChild = &merkleNode{isLeaf: false, hash: "", leftChild: nil, rightChild: nil}
+		height := node.GetHeight()
 
-			node.rightChild.insertLeft(height-1, data)
+		node.rightChild.insertLeft(height-1, data)
 
-		} else {
-			node.rightChild.AddNode(data)
-		}
+		/*
+			Otherwise, just insert the node where we find a nil right child from this current part of the tree.
+		 */
+	} else {
+		node.rightChild.AddNode(data)
 	}
+
+	// Once the node is inserted, we need to recalculate the current node's hash
 	node.hashMe()
 }
 
+/*
+	Insert the node at a given level of a tree.
+ */
 func (node *merkleNode) insertLeft(level int, data string) {
 	if level == 0 {
 		node.isLeaf = true
@@ -102,14 +119,14 @@ func (node merkleNode) GetRoot() string {
 	return node.hash
 }
 
-func (node *merkleNode) GetHeight() (i int) {
-	for i = 0; !node.isLeaf && node.leftChild != nil; i++ {
+func (node *merkleNode) GetHeight() (height int) {
+	for height = 0; !node.isLeaf && node.leftChild != nil; height++ {
 		node = node.leftChild
 	}
 	return
 }
 
-func (node *merkleNode) getNodesByLevel(level int) []string {
+func (node merkleNode) getNodesByLevel(level int) []string {
 	if level <= 0 {
 		return []string{node.hash}
 
